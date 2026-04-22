@@ -1,0 +1,18 @@
+[Unit]
+Description=Agente MAC — Sistema de Visitas Biométrico
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=operaciones
+WorkingDirectory=/home/operaciones/businessnet
+ExecStart=/usr/bin/python3 /home/operaciones/businessnet/agente_mac.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=agente-mac
+
+[Install]
+WantedBy=multi-user.target
