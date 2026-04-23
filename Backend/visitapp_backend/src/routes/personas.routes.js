@@ -1,10 +1,33 @@
 "use strict";
 const express = require("express");
-const db      = require("../config/db");
+const db = require("../config/db");
 const { autenticar, autorizar } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 router.use(autenticar);
+
+// ── GET /api/personas/enroladas ──────────────────────────────
+// Devuelve todas las personas que tienen al menos 1 huella activa
+router.get("/enroladas", async (req, res) => {
+    try {
+        const { rows } = await db.query(
+            `SELECT p.id, p.documento, p.tipo_documento,
+                    p.nombres, p.apellidos,
+                    p.nombres || ' ' || p.apellidos AS nombre_completo,
+                    p.email, p.telefono, p.departamento, p.cargo,
+                    p.activo, p.created_at,
+                    COUNT(h.id)::int AS total_huellas
+             FROM visitas.personas p
+             INNER JOIN visitas.huellas h ON h.persona_id = p.id AND h.activo = TRUE
+             GROUP BY p.id
+             ORDER BY p.apellidos, p.nombres`
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error("[personas/enroladas]", err);
+        res.status(500).json({ error: "Error consultando personas enroladas" });
+    }
+});
 
 // ── GET /api/personas?q=&page=&limit= ────────────────────────
 router.get("/", async (req, res) => {
@@ -67,7 +90,7 @@ router.get("/documento/:doc", async (req, res) => {
 router.post("/", autorizar("ADMIN", "OPERADOR"), async (req, res) => {
     try {
         const { documento, tipo_documento = "CC", nombres, apellidos,
-                email, telefono, empresa, cargo, foto_base64 } = req.body;
+            email, telefono, empresa, cargo, foto_base64 } = req.body;
 
         if (!documento || !nombres || !apellidos)
             return res.status(400).json({ error: "documento, nombres y apellidos son requeridos" });

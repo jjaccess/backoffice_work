@@ -17,8 +17,20 @@ import { environment } from '../../../environments/environment';
 
 
       <div class="header-section">
-        <h1>Estructura de Red</h1>
-        <p class="subtitulo">Visualización de la jerarquía organizacional y técnica</p>
+        <div class="header-top">
+          <div>
+            <h1>Estructura de Red</h1>
+            <p class="subtitulo">Visualización de la jerarquía organizacional y técnica</p>
+          </div>
+          <button class="btn-download" (click)="descargarJerarquia()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Descargar
+          </button>
+        </div>
       </div>
 
       <div class="card filtros-card">
@@ -87,8 +99,16 @@ import { environment } from '../../../environments/environment';
 .shape-3 { width: 200px; height: 200px; bottom: 120px; right: 80px; }
 
     .jerarquia-container { max-width: 1200px; margin: 32px auto; padding: 0 24px; font-family: 'Segoe UI', sans-serif; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
     h1 { font-size: 1.6rem; color: #1a1a2e; margin-bottom: 4px; }
     .subtitulo { color: #888; font-size: 0.9rem; margin-bottom: 24px; }
+    .btn-download {
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 9px 16px; background: #f0fdf4; color: #16a34a;
+      border: 1.5px solid #bbf7d0; border-radius: 9px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-download:hover { background: #dcfce7; border-color: #86efac; }
 
     .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); margin-bottom: 16px; }
     
@@ -170,5 +190,32 @@ export class JerarquiaComponent implements OnInit {
       item.mac?.toLowerCase().includes(term) ||
       item.oficina?.toLowerCase().includes(term)
     );
+  }
+
+  descargarJerarquia(): void {
+    const datos = this.datosFiltrados;
+    if (datos.length === 0) return;
+
+    const headers = ['Departamento', 'Zona', 'Subzona', 'Célula', 'Oficina', 'Punto de Venta', 'Código PDV', 'MAC'];
+    const filas = datos.map(item => [
+      item.departamento || '',
+      item.zona || '',
+      item.subzona || '',
+      item.celula || '',
+      item.oficina || '',
+      item.nombre_pdv || '',
+      item.codigo_pdv || '',
+      item.mac || 'N/A'
+    ]);
+
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(';'), ...filas.map(f => f.join(';'))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jerarquia_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

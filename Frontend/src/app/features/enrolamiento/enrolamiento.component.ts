@@ -32,7 +32,17 @@ interface HuellaCapturada {
 </div>
 
       <div class="page-header">
-        <h1>Enrolamiento Biométrico</h1>
+        <div class="header-top-enrol">
+          <h1>Enrolamiento Biométrico</h1>
+          <button class="btn-download" (click)="descargarEnrolados()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Descargar Enrolados
+          </button>
+        </div>
         <div class="pasos-bar">
           <div class="paso" [class.activo]="paso==='buscar'"  [class.completo]="pasoCumplido('buscar')"><span>1</span> Buscar</div>
           <div class="paso" [class.activo]="paso==='datos'"   [class.completo]="pasoCumplido('datos')"><span>2</span> Datos</div>
@@ -211,7 +221,15 @@ interface HuellaCapturada {
 
     .enrol-container { max-width: 680px; margin: 32px auto; padding: 0 16px; font-family: 'Segoe UI', sans-serif; }
     .page-header { margin-bottom: 24px; }
-    h1 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 16px; }
+    .header-top-enrol { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    h1 { font-size: 1.4rem; color: #1a1a2e; margin: 0; }
+    .btn-download {
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 9px 16px; background: #f0fdf4; color: #16a34a;
+      border: 1.5px solid #bbf7d0; border-radius: 9px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-download:hover { background: #dcfce7; border-color: #86efac; }
     .pasos-bar { display: flex; gap: 4px; }
     .paso { flex:1; text-align:center; padding:8px 4px; background:#f0f0f0; border-radius:8px; font-size:0.8rem; color:#999; }
     .paso span { display:inline-block; width:20px; height:20px; border-radius:50%; background:#ccc; color:white; font-weight:bold; margin-right:4px; line-height:20px; font-size:0.75rem; }
@@ -325,6 +343,59 @@ export class EnrolamientoComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.bio.conectar();
     this.subs.push(this.bio.respuesta$.subscribe(r => this.procesarRespuesta(r)));
+    this.cargarEnrolados();
+  }
+
+  personasEnroladas: any[] = [];
+
+  cargarEnrolados(): void {
+    this.api.getPersonasEnroladas?.()?.subscribe?.({
+      next: (res: any[]) => this.personasEnroladas = res,
+      error: () => { }
+    });
+  }
+
+  descargarEnrolados(): void {
+    // Intentar descargar desde datos ya cargados o hacer petición
+    if (this.personasEnroladas.length === 0) {
+      // Fallback: intenta descargar via API
+      this.api.getPersonasEnroladas?.()?.subscribe?.({
+        next: (personas: any[]) => {
+          this.personasEnroladas = personas;
+          this.generarCSVEnrolados(personas);
+        },
+        error: () => alert('No se pudieron obtener los datos de enrolados')
+      });
+      return;
+    }
+    this.generarCSVEnrolados(this.personasEnroladas);
+  }
+
+  private generarCSVEnrolados(datos: any[]): void {
+    if (datos.length === 0) { alert('No hay personas enroladas para descargar'); return; }
+
+    const headers = ['Documento', 'Tipo Doc', 'Nombres', 'Apellidos', 'Email', 'Teléfono', 'Departamento', 'Cargo', 'Total Huellas'];
+    const filas = datos.map(p => [
+      p.documento || '',
+      p.tipo_documento || '',
+      p.nombres || '',
+      p.apellidos || '',
+      p.email || '',
+      p.telefono || '',
+      p.departamento || '',
+      p.cargo || '',
+      p.total_huellas ?? ''
+    ]);
+
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(';'), ...filas.map(f => f.map(c => `"${c}"`).join(';'))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `enrolados_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   buscarPersona(): void {

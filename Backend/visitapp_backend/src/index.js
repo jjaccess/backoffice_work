@@ -15,6 +15,7 @@ const huellasRoutes = require("./routes/huellas.routes");
 const visitasRoutes = require("./routes/visitas.routes");
 const equiposRoutes = require("./routes/equipos.routes");
 const geografiaRoutes = require("./routes/geografia.routes");
+const usuariosRoutes = require("./routes/usuarios.routes")
 
 const app = express();
 
@@ -82,7 +83,7 @@ app.use("/api/huellas", huellasRoutes);
 app.use("/api/visitas", visitasRoutes);
 app.use("/api/equipos", equiposRoutes);
 app.use("/api/geografia", geografiaRoutes);
-
+app.use("/api/usuarios", usuariosRoutes);
 // ── 6. ERROR HANDLERS ─────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ error: "Ruta no encontrada" });

@@ -54,6 +54,14 @@ import { ApiService, Visita, PaginadoResponse } from '../../core/services/api.se
         <div class="filtros-acciones">
           <button class="btn-primary" (click)="buscar()">Buscar</button>
           <button class="btn-secundario" (click)="limpiarFiltros()">Limpiar</button>
+          <button class="btn-download" (click)="descargarHistorial()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Descargar Excel
+          </button>
         </div>
       </div>
 
@@ -154,10 +162,17 @@ import { ApiService, Visita, PaginadoResponse } from '../../core/services/api.se
     .filtro-field label { font-size: 0.8rem; color: #555; font-weight: 600; }
     .filtro-field input, .filtro-field select { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.9rem; }
     .filtro-field input:focus, .filtro-field select:focus { outline: none; border-color: #4361ee; }
-    .filtros-acciones { display: flex; gap: 10px; }
+    .filtros-acciones { display: flex; gap: 10px; align-items: center; }
     .btn-primary { padding: 10px 20px; background: #4361ee; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
     .btn-primary:hover { background: #3451d1; }
     .btn-secundario { padding: 10px 16px; background: transparent; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; }
+    .btn-download {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px; background: #f0fdf4; color: #16a34a;
+      border: 1.5px solid #bbf7d0; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-download:hover { background: #dcfce7; border-color: #86efac; }
     .tabla-card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
     .tabla-scroll { overflow-x: auto; }
     .cargando { display: flex; align-items: center; gap: 12px; padding: 32px; justify-content: center; color: #666; }
@@ -219,5 +234,36 @@ export class HistorialComponent implements OnInit {
       next: (res: any) => { this.visitas = res.data; this.total = res.total; this.cargando = false; },
       error: () => { this.cargando = false; }
     });
+  }
+
+  descargarHistorial(): void {
+    const datos = this.visitas;
+    if (datos.length === 0) return;
+
+    const headers = ['Fecha/Hora', 'Documento', 'Persona', 'Resultado', 'Score', 'Punto de Venta', 'Oficina', 'Célula', 'Subzona', 'Zona', 'Departamento', 'MAC'];
+    const filas = datos.map(v => [
+      v.fecha_hora || '',
+      v.documento || '',
+      v.nombre_completo || '',
+      v.resultado || '',
+      v.score_biometrico ?? '',
+      v.punto_venta || '',
+      v.oficina || '',
+      v.celula || '',
+      v.subzona || '',
+      v.zona || '',
+      v.departamento_pdv || '',
+      v.mac_equipo || ''
+    ]);
+
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(';'), ...filas.map(f => f.map(c => `"${c}"`).join(';'))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historial_visitas_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

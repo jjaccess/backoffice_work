@@ -21,15 +21,15 @@ export interface Persona {
 }
 
 export interface TemplatesResponse {
-  persona_id:      number;
+  persona_id: number;
   nombre_completo: string;
-  departamento?:   string;
-  foto_base64?:    string;
+  departamento?: string;
+  foto_base64?: string;
   templates: {
-    id:           number;
-    dedo:         number;
+    id: number;
+    dedo: number;
     template_iso: string;
-    calidad:      number;
+    calidad: number;
   }[];
 }
 
@@ -68,7 +68,7 @@ export class ApiService {
 
   private base = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ── Auth ─────────────────────────────────────────────────
   login(username: string, password: string): Observable<{ token: string; usuario: any }> {
@@ -173,6 +173,10 @@ export class ApiService {
 
   crearPuntoDeVenta(data: any): Observable<any> {
     return this.http.post(`${this.base}/geografia/puntosdeventa`, data);
+  }
+
+  getPersonasEnroladas(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/personas/enroladas`);
   }
 
   // ── Util ──────────────────────────────────────────────────

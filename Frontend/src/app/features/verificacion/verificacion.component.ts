@@ -13,7 +13,6 @@ type Fase = 'espera' | 'buscando' | 'capturando' | 'verificando' | 'resultado';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="verificacion-page">
-      
       <div class="bg-shapes">
         <div class="shape shape-1"></div>
         <div class="shape shape-2"></div>
@@ -107,83 +106,37 @@ type Fase = 'espera' | 'buscando' | 'capturando' | 'verificando' | 'resultado';
     </div>
   `,
   styles: [`
+    /* Se mantienen tus estilos de UI (Círculos, Badges, Cards, Animaciones) */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    .verificacion-page { 
-      min-height: 100vh; 
-      background: #f0f4f8; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: flex-start; 
-      padding: 60px 16px;
-      position: relative; 
-      overflow: hidden; 
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    /* Fondo con círculos oscuros sutiles */
+    .verificacion-page { min-height: 100vh; background: #f0f4f8; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 60px 16px; position: relative; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
     .bg-shapes { position: absolute; inset: 0; pointer-events: none; }
     .shape { position: absolute; border-radius: 50%; opacity: 0.07; background: #1a1a2e; }
     .shape-1 { width: 500px; height: 500px; top: -200px; right: -100px; }
     .shape-2 { width: 300px; height: 300px; bottom: -100px; left: -80px; }
     .shape-3 { width: 200px; height: 200px; bottom: 120px; right: 80px; }
-
     .verificacion-wrapper { position: relative; z-index: 10; width: 100%; max-width: 520px; }
-
     .header-quiosco { width: 100%; margin-bottom: 24px; }
     .header-info { display: flex; justify-content: space-between; align-items: center; }
     .header-info h1 { font-size: 1.3rem; color: #1a1a2e; }
-
-    /* Badges de estado */
     .ws-badge { font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; font-weight: 700; }
     .badge-conectado { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .badge-conectando { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
     .badge-desconectado { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-    /* Estilo de la Card Blanca */
-    .quiosco-card { 
-      background: white; 
-      border-radius: 24px; 
-      padding: 40px 32px; 
-      text-align: center; 
-      box-shadow: 0 20px 50px rgba(0,0,0,0.05); 
-      animation: fadeIn 0.3s ease;
-    }
+    .quiosco-card { background: white; border-radius: 24px; padding: 40px 32px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
-
     .quiosco-icon { font-size: 3.5rem; margin-bottom: 16px; }
     h2 { color: #1a1a2e; font-size: 1.4rem; margin-bottom: 20px; }
-
-    /* Inputs y Botones */
-    .cc-input { 
-      width: 100%; padding: 16px; font-size: 1.3rem; font-weight: 700; border: 2px solid #e2e8f0; 
-      border-radius: 14px; text-align: center; margin-bottom: 20px; outline: none; background: #f8fafc;
-    }
-    .cc-input:focus { border-color: #4361ee; background: white; }
-    
-    .btn-primary-quiosco { 
-      width: 100%; padding: 16px; background: #4361ee; color: white; border: none; 
-      border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
-    }
+    .cc-input { width: 100%; padding: 16px; font-size: 1.3rem; font-weight: 700; border: 2px solid #e2e8f0; border-radius: 14px; text-align: center; margin-bottom: 20px; outline: none; background: #f8fafc; }
+    .btn-primary-quiosco { width: 100%; padding: 16px; background: #4361ee; color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
     .btn-primary-quiosco:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .aviso-ws-amarillo { 
-      color: #856404; background: #fff3cd; padding: 12px; border-radius: 12px; 
-      margin-top: 15px; font-size: 0.85rem; border: 1px solid #ffeeba;
-    }
-
-    /* Animaciones Huella */
+    .aviso-ws-amarillo { color: #856404; background: #fff3cd; padding: 12px; border-radius: 12px; margin-top: 15px; font-size: 0.85rem; border: 1px solid #ffeeba; }
     .huella-animada { position: relative; width: 120px; height: 120px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
     .huella-emoji { font-size: 3.5rem; z-index: 2; }
     .ring { position: absolute; border: 2px solid #4361ee; border-radius: 50%; opacity: 0; animation: expand 2s infinite; }
     .ring1{inset:20%; animation-delay: 0s;} .ring2{inset:10%; animation-delay: 0.6s;} .ring3{inset:0%; animation-delay: 1.2s;}
     @keyframes expand { 0%{transform:scale(0.8);opacity:0.6} 100%{transform:scale(1.4);opacity:0} }
-
-    /* Spinner y Resultados */
     .spinner-grande { width: 60px; height: 60px; border: 5px solid #f1f5f9; border-top-color: #4361ee; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
     @keyframes spin { to{transform:rotate(360deg)} }
-
     .res-ok { border-top: 10px solid #10b981; }
     .res-fallo { border-top: 10px solid #ef4444; }
     .resultado-emoji { font-size: 4.5rem; margin-bottom: 15px; }
@@ -204,9 +157,8 @@ export class VerificacionComponent implements OnInit, OnDestroy {
   resultado: any = null;
   estadoWS = 'desconectado';
   infoEquipo: any = null;
-  segundosCaptura = 35;
+  segundosCaptura = 10;
 
-  private reinicioInterval: any = null;
   private capturaInterval: any = null;
   private esperandoCaptura = false;
   private subs: Subscription[] = [];
@@ -233,52 +185,25 @@ export class VerificacionComponent implements OnInit, OnDestroy {
 
     this.api.obtenerTemplates(this.documento).subscribe({
       next: (datos) => {
-        this.persona = {
-          nombre_completo: datos.nombre_completo,
-          departamento: datos.departamento,
-          foto_base64: datos.foto_base64
-        };
+        this.persona = { ...datos };
         this.fase = 'capturando';
         this.esperandoCaptura = true;
+        // El JAR tiene 30s de timeout, pero nosotros manejamos 10s visuales
         this.bio.capturar(1, 30000);
         this.iniciarTimeoutCaptura();
       },
       error: (err) => {
-        const msg = err.error?.error || 'Documento no registrado en el sistema';
+        const msg = err.error?.error || 'Documento no registrado';
         this.mostrarResultado('FALLO', msg);
       }
     });
   }
 
-  cancelar(): void {
-    this.limpiarTimers();
-    this.esperandoCaptura = false;
-    this.bio.reconectar();
-    this.reiniciar();
-  }
-
-  reiniciar(): void {
-    this.limpiarTimers();
-    this.fase = 'espera';
-    this.documento = '';
-    this.persona = null;
-    this.resultado = null;
-    this.esperandoCaptura = false;
-    this.segundosCaptura = 10;
-  }
-
   private procesarRespuesta(resp: RespuestaJar): void {
     if (!this.esperandoCaptura) return;
 
-    if (resp.strRespuesta === 'CANCELAR') {
-      this.limpiarTimers();
-      this.esperandoCaptura = false;
-      this.reiniciar();
-      return;
-    }
-
     if (resp.strRespuesta === 'OK' && resp.strIso) {
-      this.limpiarTimers();
+      this.limpiarCapturaInterval();
       this.esperandoCaptura = false;
       this.fase = 'verificando';
 
@@ -291,13 +216,14 @@ export class VerificacionComponent implements OnInit, OnDestroy {
         dedo_usado: 1,
         resultado_jar: 'OK'
       }).subscribe({
-        next: r => { this.resultado = r; this.fase = 'resultado'; },
+        next: r => {
+          this.resultado = { ...r, fecha_hora: new Date() };
+          this.fase = 'resultado';
+        },
         error: () => this.mostrarResultado('ERROR', 'Error comunicando con el servidor')
       });
-    } else if (resp.error) {
-      this.limpiarTimers();
-      this.esperandoCaptura = false;
-      this.mostrarResultado('ERROR', 'Error en el lector. Intente de nuevo.');
+    } else if (resp.error || resp.strRespuesta === 'CANCELAR') {
+      this.cancelar();
     }
   }
 
@@ -311,7 +237,7 @@ export class VerificacionComponent implements OnInit, OnDestroy {
           this.limpiarCapturaInterval();
           if (this.esperandoCaptura) {
             this.esperandoCaptura = false;
-            this.bio.reconectar();
+            this.bio.reconectar(); // Cancela la espera en el JAR
             this.mostrarResultado('ERROR', 'Tiempo agotado. No se detectó huella.');
           }
         }
@@ -319,24 +245,38 @@ export class VerificacionComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  private mostrarResultado(resultado: 'OK' | 'FALLO' | 'ERROR', mensaje: string): void {
-    this.limpiarTimers();
+  mostrarResultado(resultado: 'OK' | 'FALLO' | 'ERROR', mensaje: string): void {
+    this.limpiarCapturaInterval();
     this.esperandoCaptura = false;
-    this.resultado = { resultado, mensaje, persona: this.persona };
+    this.resultado = { resultado, mensaje, persona: this.persona, fecha_hora: new Date() };
     this.fase = 'resultado';
   }
 
-  private limpiarTimers(): void {
+  cancelar(): void {
     this.limpiarCapturaInterval();
-    if (this.reinicioInterval !== null) { window.clearInterval(this.reinicioInterval); this.reinicioInterval = null; }
+    this.esperandoCaptura = false;
+    this.bio.reconectar();
+    this.reiniciar();
+  }
+
+  reiniciar(): void {
+    this.limpiarCapturaInterval();
+    this.fase = 'espera';
+    this.documento = '';
+    this.persona = null;
+    this.resultado = null;
+    this.esperandoCaptura = false;
   }
 
   private limpiarCapturaInterval(): void {
-    if (this.capturaInterval !== null) { window.clearInterval(this.capturaInterval); this.capturaInterval = null; }
+    if (this.capturaInterval) {
+      window.clearInterval(this.capturaInterval);
+      this.capturaInterval = null;
+    }
   }
 
   ngOnDestroy(): void {
-    this.limpiarTimers();
+    this.limpiarCapturaInterval();
     this.subs.forEach(s => s.unsubscribe());
   }
 }

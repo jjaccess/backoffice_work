@@ -15,6 +15,16 @@ function authGuard() {
   return true;
 }
 
+function adminGuard() {
+  const router = inject(Router);
+  const platformId = inject(PLATFORM_ID);
+  if (!isPlatformBrowser(platformId)) return true;
+  const token = localStorage.getItem('token');
+  if (!token) { router.navigate(['/login']); return false; }
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  if (!['ADMIN', 'TIC'].includes(usuario.rol)) { return router.navigate(['/quiosco']); } return true;
+}
+
 export const routes: Routes = [
   // Ruta raíz → quiosco (SIN authGuard)
   { path: '', redirectTo: 'quiosco', pathMatch: 'full' },
@@ -61,6 +71,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/admin/jerarquia.component').then(m => m.JerarquiaComponent)
+  },
+  // ── CONFIGURACIÓN (solo ADMIN) ────────────────────────────
+  {
+    path: 'configuracion/usuarios',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/configuracion/usuarios/usuarios.component').then(m => m.UsuariosComponent)
   },
   { path: '**', redirectTo: 'quiosco' }
 ];
