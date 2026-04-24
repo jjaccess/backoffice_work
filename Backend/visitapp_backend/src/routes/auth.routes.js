@@ -1,8 +1,8 @@
 "use strict";
 const express = require("express");
-const bcrypt  = require("bcrypt");
-const jwt     = require("jsonwebtoken");
-const db      = require("../config/db");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const db = require("../config/db");
 const { autenticar } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
@@ -25,7 +25,7 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ error: "Credenciales inválidas" });
 
         const usuario = rows[0];
-        const match   = await bcrypt.compare(password, usuario.password_hash);
+        const match = await bcrypt.compare(password, usuario.password_hash);
         if (!match)
             return res.status(401).json({ error: "Credenciales inválidas" });
 
@@ -36,9 +36,11 @@ router.post("/login", async (req, res) => {
         );
 
         const token = jwt.sign(
-            { id: usuario.id, username: usuario.username,
-              nombre: `${usuario.nombres} ${usuario.apellidos}`,
-              rol: usuario.rol },
+            {
+                id: usuario.id, username: usuario.username,
+                nombre: `${usuario.nombres} ${usuario.apellidos}`,
+                rol: usuario.rol
+            },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
         );
@@ -46,10 +48,10 @@ router.post("/login", async (req, res) => {
         res.json({
             token,
             usuario: {
-                id:       usuario.id,
+                id: usuario.id,
                 username: usuario.username,
-                nombre:   `${usuario.nombres} ${usuario.apellidos}`,
-                rol:      usuario.rol
+                nombre: `${usuario.nombres} ${usuario.apellidos}`,
+                rol: usuario.rol
             }
         });
     } catch (err) {

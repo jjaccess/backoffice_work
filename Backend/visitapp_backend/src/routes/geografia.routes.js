@@ -69,7 +69,8 @@ router.get("/jerarquia-completa", async (_req, res) => {
         const { rows } = await db.query(`
             SELECT 
                 pdv_id AS codigo_pdv, departamento, zona, subzona, celula, oficina, 
-                punto_venta as nombre_pdv, mac_address as mac 
+                punto_venta as nombre_pdv, mac_address as mac,
+                direccion, latitud, longitud
             FROM visitas.v_puntosdeventa 
             ORDER BY departamento, zona, punto_venta
         `);
@@ -124,14 +125,15 @@ router.get("/puntosdeventa", async (_req, res) => {
 // ── Crear PDV individual ─────────────────────────────────────
 router.post("/puntosdeventa", autorizar("ADMIN"), async (req, res) => {
     try {
-        const { oficina_id, nombre, mac_address, direccion } = req.body;
+        const { oficina_id, nombre, mac_address, direccion, latitud, longitud } = req.body;
         if (!oficina_id || !nombre || !mac_address)
             return res.status(400).json({ error: "oficina_id, nombre y mac_address son requeridos" });
 
         const { rows } = await db.query(
-            `INSERT INTO visitas.puntosdeventa (oficina_id, nombre, mac_address, direccion)
-             VALUES ($1,$2,$3,$4) RETURNING *`,
-            [oficina_id, nombre, mac_address.toUpperCase().replace(/-/g, ":"), direccion || null]
+            `INSERT INTO visitas.puntosdeventa (oficina_id, nombre, mac_address, direccion, latitud, longitud)
+             VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+            [oficina_id, nombre, mac_address.toUpperCase().replace(/-/g, ":"), direccion || null,
+                latitud || null, longitud || null]
         );
         res.status(201).json(rows[0]);
     } catch (err) {
@@ -237,6 +239,8 @@ router.post(
                 const mac_raw = String(f["MAC ADDRESS *"] || f["MAC ADDRESS"] || "").trim();
                 const mac = mac_raw.toUpperCase().replace(/-/g, ":");
                 const direccion = String(f["DIRECCIÓN"] || f["DIRECCION"] || "").trim();
+                const latitud = parseFloat(f["LATITUD"]) || null;
+                const longitud = parseFloat(f["LONGITUD"]) || null;
 
                 // Saltar filas completamente vacías
                 if (!departamento && !zona && !mac_raw) continue;
@@ -300,17 +304,17 @@ router.post(
                     if (existe.rows.length > 0) {
                         await client.query(
                             `UPDATE visitas.puntosdeventa
-                             SET oficina_id=$1, nombre=$2, direccion=$3, activo=TRUE
-                             WHERE mac_address=$4`,
-                            [rOfi[0].id, pdv_nombre, direccion || null, mac]
+                             SET oficina_id=$1, nombre=$2, direccion=$3, latitud=$4, longitud=$5, activo=TRUE
+                             WHERE mac_address=$6`,
+                            [rOfi[0].id, pdv_nombre, direccion || null, latitud, longitud, mac]
                         );
                         resultados.actualizados++;
                     } else {
                         await client.query(
                             `INSERT INTO visitas.puntosdeventa
-                             (oficina_id, nombre, mac_address, direccion)
-                             VALUES ($1,$2,$3,$4)`,
-                            [rOfi[0].id, pdv_nombre, mac, direccion || null]
+                             (oficina_id, nombre, mac_address, direccion, latitud, longitud)
+                             VALUES ($1,$2,$3,$4,$5,$6)`,
+                            [rOfi[0].id, pdv_nombre, mac, direccion || null, latitud, longitud]
                         );
                         resultados.insertados++;
                     }
@@ -338,5 +342,78 @@ router.post(
         });
     }
 );
+
+// ════════════════════════════════════════════════════════════
+// ENDPOINT MAPA — PDVs con estado de visitas
+// ════════════════════════════════════════════════════════════
+router.get("/mapa/visitas", async (req, res) => {
+    try {
+        const { fecha, documento, departamento } = req.query;
+
+        // Traer todos los PDV con coordenadas
+        let query = `
+            SELECT 
+                pdv.pdv_id, pdv.punto_venta, pdv.mac_address, pdv.direccion,
+                pdv.latitud, pdv.longitud, pdv.departamento, pdv.zona,
+                pdv.subzona, pdv.celula, pdv.oficina
+            FROM visitas.v_puntosdeventa pdv
+            WHERE pdv.latitud IS NOT NULL AND pdv.longitud IS NOT NULL
+        `;
+        const params = [];
+
+        if (departamento) {
+            params.push(departamento);
+            query += ` AND pdv.departamento = $${params.length}`;
+        }
+
+        query += ` ORDER BY pdv.departamento, pdv.punto_venta`;
+
+        const { rows: pdvs } = await db.query(query, params);
+
+        // Si hay fecha, buscar visitas de ese día
+        let visitasMap = {};
+        if (fecha) {
+            let visitaQuery = `
+                SELECT DISTINCT v.mac_equipo, v.resultado, v.documento,
+                       p.nombres || ' ' || p.apellidos AS nombre_completo,
+                       v.fecha_hora
+                FROM visitas.visitas v
+                LEFT JOIN visitas.personas p ON p.id = v.persona_id
+                WHERE v.fecha_hora::date = $1
+            `;
+            const vParams = [fecha];
+
+            if (documento) {
+                vParams.push(documento);
+                visitaQuery += ` AND v.documento = $${vParams.length}`;
+            }
+
+            const { rows: visitas } = await db.query(visitaQuery, vParams);
+
+            for (const vis of visitas) {
+                const mac = vis.mac_equipo;
+                if (!visitasMap[mac]) visitasMap[mac] = [];
+                visitasMap[mac].push({
+                    documento: vis.documento,
+                    nombre: vis.nombre_completo,
+                    resultado: vis.resultado,
+                    fecha_hora: vis.fecha_hora
+                });
+            }
+        }
+
+        // Combinar: PDV + estado de visita
+        const resultado = pdvs.map(pdv => ({
+            ...pdv,
+            visitado: !!visitasMap[pdv.mac_address],
+            visitas: visitasMap[pdv.mac_address] || []
+        }));
+
+        res.json(resultado);
+    } catch (err) {
+        console.error("[mapa/visitas]", err);
+        res.status(500).json({ error: "Error consultando datos del mapa" });
+    }
+});
 
 module.exports = router;

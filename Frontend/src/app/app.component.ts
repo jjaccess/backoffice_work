@@ -42,6 +42,10 @@ import { filter } from 'rxjs/operators';
               <a *ngIf="tieneRol('ADMIN','TIC','AUD','GH')" routerLink="/historial" routerLinkActive="active" class="nav-item sub-item">
                 <span class="nav-icon">📋</span><span>Historial</span>
               </a>
+
+              <a *ngIf="tieneRol('ADMIN','TIC')" routerLink="/mapa" routerLinkActive="active" class="nav-item sub-item">
+  <span class="nav-icon">🗺️</span><span>Mapa</span>
+</a>
               
               <!-- Cargar PDV: ADMIN y TIC -->
               <a *ngIf="tieneRol('ADMIN','TIC')" routerLink="/admin/carga-pdv" routerLinkActive="active" class="nav-item sub-item">

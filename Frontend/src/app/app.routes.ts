@@ -26,10 +26,9 @@ function adminGuard() {
 }
 
 export const routes: Routes = [
-  // Ruta raíz → quiosco (SIN authGuard)
   { path: '', redirectTo: 'quiosco', pathMatch: 'full' },
 
-  // ── RUTA PÚBLICA — sin login ──────────────────────────────
+  // ── RUTA PÚBLICA ──────────────────────────────────────────
   {
     path: 'quiosco',
     loadComponent: () =>
@@ -61,6 +60,12 @@ export const routes: Routes = [
       import('./features/historial/historial.component').then(m => m.HistorialComponent)
   },
   {
+    path: 'mapa',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/mapa/mapa.component').then(m => m.MapaComponent)
+  },
+  {
     path: 'admin/carga-pdv',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -72,7 +77,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/jerarquia.component').then(m => m.JerarquiaComponent)
   },
-  // ── CONFIGURACIÓN (solo ADMIN) ────────────────────────────
   {
     path: 'configuracion/usuarios',
     canActivate: [adminGuard],
