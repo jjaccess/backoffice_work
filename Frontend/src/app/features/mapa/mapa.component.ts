@@ -129,11 +129,12 @@ export class MapaComponent implements OnInit, AfterViewInit {
   datos: any[] = [];
   cargando = false;
   datosCargados = false;
-  sinCoordenadas = 0;
 
   get totalPdv() { return this.datos.length; }
-  get visitados() { return this.datos.filter(d => d.visitado).length; }
-  get noVisitados() { return this.datos.filter(d => !d.visitado).length; }
+  get conCoordenadas() { return this.datos.filter(d => d.latitud && d.longitud); }
+  get sinCoordenadas() { return this.datos.filter(d => !d.latitud || !d.longitud).length; }
+  get visitados() { return this.conCoordenadas.filter(d => d.visitado).length; }
+  get noVisitados() { return this.conCoordenadas.filter(d => !d.visitado).length; }
 
   constructor(private http: HttpClient) { }
 
@@ -219,13 +220,12 @@ export class MapaComponent implements OnInit, AfterViewInit {
     if (!this.L || !this.map || !this.markersLayer) return;
 
     this.markersLayer.clearLayers();
-    this.sinCoordenadas = 0;
 
     const bounds: any[] = [];
     const tieneFiltroFecha = !!this.filtros.fecha;
 
     for (const pdv of this.datos) {
-      if (!pdv.latitud || !pdv.longitud) { this.sinCoordenadas++; continue; }
+      if (!pdv.latitud || !pdv.longitud) continue;
 
       let color: string;
       if (!tieneFiltroFecha) {

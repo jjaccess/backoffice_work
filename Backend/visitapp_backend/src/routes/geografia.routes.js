@@ -123,7 +123,7 @@ router.get("/puntosdeventa", async (_req, res) => {
 });
 
 // ── Crear PDV individual ─────────────────────────────────────
-router.post("/puntosdeventa", autorizar("ADMIN"), async (req, res) => {
+router.post("/puntosdeventa", autorizar("ADMIN", "TIC"), async (req, res) => {
     try {
         const { oficina_id, nombre, mac_address, direccion, latitud, longitud } = req.body;
         if (!oficina_id || !nombre || !mac_address)
@@ -142,6 +142,44 @@ router.post("/puntosdeventa", autorizar("ADMIN"), async (req, res) => {
     }
 });
 
+// ── Editar PDV ───────────────────────────────────────────────
+router.put("/puntosdeventa/:id", autorizar("ADMIN", "TIC"), async (req, res) => {
+    try {
+        const { nombre, mac_address, direccion, latitud, longitud } = req.body;
+        if (!nombre || !mac_address)
+            return res.status(400).json({ error: "nombre y mac_address son requeridos" });
+
+        const { rows } = await db.query(
+            `UPDATE visitas.puntosdeventa
+             SET nombre=$1, mac_address=$2, direccion=$3, latitud=$4, longitud=$5, updated_at=NOW()
+             WHERE id=$6 RETURNING *`,
+            [nombre, mac_address.toUpperCase().replace(/-/g, ":"),
+                direccion || null, latitud || null, longitud || null, req.params.id]
+        );
+        if (!rows.length) return res.status(404).json({ error: "PDV no encontrado" });
+        res.json(rows[0]);
+    } catch (err) {
+        if (err.code === "23505") return res.status(409).json({ error: "MAC ya registrada en otro PDV" });
+        console.error("[pdv/PUT]", err);
+        res.status(500).json({ error: "Error actualizando PDV" });
+    }
+});
+
+// ── Eliminar PDV ─────────────────────────────────────────────
+router.delete("/puntosdeventa/:id", autorizar("ADMIN", "TIC"), async (req, res) => {
+    try {
+        const { rows } = await db.query(
+            "DELETE FROM visitas.puntosdeventa WHERE id=$1 RETURNING id, nombre",
+            [req.params.id]
+        );
+        if (!rows.length) return res.status(404).json({ error: "PDV no encontrado" });
+        res.json({ mensaje: "PDV eliminado correctamente", pdv: rows[0] });
+    } catch (err) {
+        console.error("[pdv/DELETE]", err);
+        res.status(500).json({ error: "Error eliminando PDV" });
+    }
+});
+
 // ── CRUD jerarquía ───────────────────────────────────────────
 router.post("/departamentos", autorizar("ADMIN"), async (req, res) => {
     try {
@@ -156,7 +194,7 @@ router.post("/departamentos", autorizar("ADMIN"), async (req, res) => {
     }
 });
 
-router.post("/zonas", autorizar("ADMIN"), async (req, res) => {
+router.post("/zonas", autorizar("ADMIN", "TIC"), async (req, res) => {
     try {
         const { rows } = await db.query(
             "INSERT INTO visitas.zonas (departamento_id, nombre) VALUES ($1,$2) RETURNING *",
@@ -166,7 +204,7 @@ router.post("/zonas", autorizar("ADMIN"), async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-router.post("/subzonas", autorizar("ADMIN"), async (req, res) => {
+router.post("/subzonas", autorizar("ADMIN", "TIC"), async (req, res) => {
     try {
         const { rows } = await db.query(
             "INSERT INTO visitas.subzonas (zona_id, nombre) VALUES ($1,$2) RETURNING *",
@@ -186,7 +224,7 @@ router.post("/celulas", autorizar("ADMIN"), async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-router.post("/oficinas", autorizar("ADMIN"), async (req, res) => {
+router.post("/oficinas", autorizar("ADMIN", "TIC"), async (req, res) => {
     try {
         const { rows } = await db.query(
             "INSERT INTO visitas.oficinas (celula_id, nombre) VALUES ($1,$2) RETURNING *",
@@ -201,7 +239,7 @@ router.post("/oficinas", autorizar("ADMIN"), async (req, res) => {
 // ════════════════════════════════════════════════════════════
 router.post(
     "/cargar-excel",
-    autorizar("ADMIN"),
+    autorizar("ADMIN", "TIC"),
     upload.single("archivo"),
     async (req, res) => {
         if (!req.file) return res.status(400).json({ error: "No se recibió archivo" });
@@ -350,14 +388,14 @@ router.get("/mapa/visitas", async (req, res) => {
     try {
         const { fecha, documento, departamento } = req.query;
 
-        // Traer todos los PDV con coordenadas
+        // Traer TODOS los PDV (con y sin coordenadas)
         let query = `
             SELECT 
                 pdv.pdv_id, pdv.punto_venta, pdv.mac_address, pdv.direccion,
                 pdv.latitud, pdv.longitud, pdv.departamento, pdv.zona,
                 pdv.subzona, pdv.celula, pdv.oficina
             FROM visitas.v_puntosdeventa pdv
-            WHERE pdv.latitud IS NOT NULL AND pdv.longitud IS NOT NULL
+            WHERE 1=1
         `;
         const params = [];
 

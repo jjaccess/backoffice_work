@@ -123,8 +123,18 @@ import { ApiService, Visita, PaginadoResponse } from '../../core/services/api.se
 
         <div class="paginacion" *ngIf="total > limite">
           <button class="btn-page" [disabled]="pagina <= 1" (click)="cambiarPagina(pagina - 1)">‹ Anterior</button>
-          <span>Página {{ pagina }} de {{ totalPaginas }} · {{ total }} registros</span>
+          <div class="paginas-nums">
+            <button *ngFor="let p of paginasVisibles" class="btn-page-num"
+                    [class.activa]="p === pagina" (click)="cambiarPagina(p)">{{ p }}</button>
+          </div>
           <button class="btn-page" [disabled]="pagina >= totalPaginas" (click)="cambiarPagina(pagina + 1)">Siguiente ›</button>
+          <select class="select-limite" [(ngModel)]="limite" (change)="buscar()">
+            <option [ngValue]="10">10 / pág</option>
+            <option [ngValue]="25">25 / pág</option>
+            <option [ngValue]="50">50 / pág</option>
+            <option [ngValue]="100">100 / pág</option>
+          </select>
+          <span class="pag-info">{{ total }} registros</span>
         </div>
       </div>
     </div>
@@ -192,10 +202,20 @@ import { ApiService, Visita, PaginadoResponse } from '../../core/services/api.se
     .badge-fallo { background: #f8d7da; color: #721c24; }
     .badge-error { background: #fff3cd; color: #856404; }
     .sin-datos { text-align: center; padding: 48px; color: #999; }
-    .paginacion { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px; border-top: 1px solid #f0f0f0; font-size: 0.85rem; color: #555; }
-    .btn-page { padding: 6px 14px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; background: white; }
+    .paginacion { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border-top: 1px solid #f0f0f0; font-size: 0.85rem; color: #555; flex-wrap: wrap; }
+    .btn-page { padding: 6px 14px; border: 1.5px solid #e0e0e0; border-radius: 7px; cursor: pointer; background: white; font-size: 0.83rem; color: #555; transition: all 0.15s; }
     .btn-page:hover:not(:disabled) { border-color: #4361ee; color: #4361ee; }
     .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+    .paginas-nums { display: flex; gap: 4px; }
+    .btn-page-num {
+      width: 32px; height: 32px; border: 1.5px solid #e0e0e0; border-radius: 7px;
+      background: white; cursor: pointer; font-size: 0.83rem; color: #555; transition: all 0.15s;
+    }
+    .btn-page-num:hover { border-color: #4361ee; color: #4361ee; }
+    .btn-page-num.activa { background: #4361ee; color: white; border-color: #4361ee; }
+    .select-limite { padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 0.8rem; outline: none; background: white; }
+    .select-limite:focus { border-color: #4361ee; }
+    .pag-info { font-size: 0.78rem; color: #999; margin-left: 4px; }
     @media (max-width: 768px) { .filtros-grid { grid-template-columns: 1fr 1fr; } }
   `]
 })
@@ -227,6 +247,18 @@ export class HistorialComponent implements OnInit {
   cambiarPagina(p: number): void { this.pagina = p; this.cargar(); }
 
   get totalPaginas(): number { return Math.ceil(this.total / this.limite); }
+
+  get paginasVisibles(): number[] {
+    const total = this.totalPaginas;
+    const actual = this.pagina;
+    const paginas: number[] = [];
+    let inicio = Math.max(1, actual - 2);
+    let fin = Math.min(total, actual + 2);
+    if (actual <= 3) fin = Math.min(total, 5);
+    if (actual >= total - 2) inicio = Math.max(1, total - 4);
+    for (let i = inicio; i <= fin; i++) paginas.push(i);
+    return paginas;
+  }
 
   private cargar(): void {
     this.cargando = true;
